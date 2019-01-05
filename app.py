@@ -1,6 +1,7 @@
 import flask
-import os
 import glob
+import os
+import pathlib
 import socket
 import urllib
 
@@ -9,20 +10,21 @@ PORT=5000
 
 app = flask.Flask(__name__)
 
-def get_my_local_ip():
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    s.connect(("8.8.8.8", 80))
-    result = s.getsockname()[0]
-    s.close()
-    return result
+# def get_my_local_ip():
+#     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+#     s.connect(("8.8.8.8", 80))
+#     result = s.getsockname()[0]
+#     s.close()
+#     return result
 
-IP = get_my_local_ip()
+
 
 def get_image_urls(folder):
     os.chdir(folder)
-    # TODO make case insensitive
-    files =  glob.glob('**/*.jpg', recursive=True)
-    return [f"http://{IP}:{PORT}/image/{urllib.parse.quote(file)}" for file in files]
+    files =  glob.glob('**/*', recursive=True)
+    files = [f for f in files if pathlib.Path(f).suffix.lower() in [".jpg", ".jpeg"]]
+    
+    return [f"/image/{urllib.parse.quote(file)}" for file in files]
 
 
 @app.route("/")

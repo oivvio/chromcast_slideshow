@@ -15,7 +15,7 @@ img {
 
     opacity: 0.0;
     position: absolute;
-    transition: opacity 500ms ease-in-out;
+    transition: opacity 1000ms ease-in-out;
 }
 
 

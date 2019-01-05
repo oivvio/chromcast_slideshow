@@ -1,3 +1,6 @@
+// We bring NoSleep.js in via a script tag
+declare var NoSleep: any;
+
 function isEven(n: number) {
     n = Number(n);
     return n === 0 || !!(n && !(n % 2));
@@ -10,6 +13,9 @@ async function updateImage(index: number, urls: string[]) {
     let response = await fetch(url);
     let blob = await response.blob();
     let objectURL = await URL.createObjectURL(blob);
+
+    console.log("hang back 1000ms");
+    await delay(1000);
 
     if (isEven(index)) {
         var activeElement = document.getElementById("even") as HTMLImageElement;
@@ -35,7 +41,14 @@ async function delay(milliseconds: number) {
     });
 }
 
+
 window.onload = async function() {
+
+    // Do not dim the screen
+
+    let noSleep = new NoSleep();
+    noSleep.enable();
+
     // Get the images json
     const imagesResponse = await fetch("/images");
     const imageUrls = await imagesResponse.json();

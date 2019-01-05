@@ -10,7 +10,7 @@ from flask import Flask
 
 from invoke import task
 import pychromecast
-
+from pychromecast.controllers.dashcast import DashCastController
 
 
 def _get_my_local_ip():
@@ -44,14 +44,6 @@ def list_chromecasts(ctx):
 
 
 @task
-def flask(ctx, folder):
-    app = Flask(__name__)
-
-    @app.route("/")
-    def hello():
-        return "Hello World!"
-
-@task
 def slideshow(ctx, folder, uuid):
     # Move to the folder with the images
     os.chdir(folder)
@@ -83,7 +75,25 @@ def slideshow(ctx, folder, uuid):
                 media_controller.play_media(url, 'image/jpeg')
                 time.sleep(10)
 
-            
+
+@task
+def loadslideshow(ctx, uuid):
+    # Move to the folder with the images
+    # Get our current ip
+    ip = _get_my_local_ip()
+
+    # Get a handle on the chromecast 
+    cast = _get_cast(uuid)
+    cast.wait()
+
+    dcc = DashCastController()
+    cast.register_handler(dcc)
+
+    dcc.load_url(f"http://{ip}:5000")
+    breakpoint()
+
+
+                
 @task
 def build_js(ctx, pty=True):
 

@@ -18,6 +18,8 @@ function updateImage(index, urls) {
         let response = yield fetch(url);
         let blob = yield response.blob();
         let objectURL = yield URL.createObjectURL(blob);
+        console.log("hang back 1000ms");
+        yield delay(1000);
         if (isEven(index)) {
             var activeElement = document.getElementById("even");
             var inActiveElement = document.getElementById("odd");
@@ -43,6 +45,9 @@ function delay(milliseconds) {
 }
 window.onload = function () {
     return __awaiter(this, void 0, void 0, function* () {
+        // Do not dim the screen
+        let noSleep = new NoSleep();
+        noSleep.enable();
         // Get the images json
         const imagesResponse = yield fetch("/images");
         const imageUrls = yield imagesResponse.json();
