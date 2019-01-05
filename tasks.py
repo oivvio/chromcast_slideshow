@@ -1,7 +1,39 @@
+import http.server
+import os
+import socketserver
+import socket
+import glob
+import threading
+import time
+import urllib
+from flask import Flask
+
 from invoke import task
 import pychromecast
 
 
+
+def _get_my_local_ip():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.connect(("8.8.8.8", 80))
+    result = s.getsockname()[0]
+    s.close()
+    return result
+
+def _get_cast(uuid):
+    print("Finding chromecasts. This might take a while!\n")
+    
+    casts = pychromecast.get_chromecasts()
+
+    try:
+        cast = [cast for cast in casts if cast.device.uuid.__str__() == uuid][0]
+    except BaseException as e:
+        cast = None
+        print(e)
+
+    return cast
+    
+    
 @task
 def list_chromecasts(ctx):
     """List chromecasts on network"""
@@ -12,17 +44,46 @@ def list_chromecasts(ctx):
 
 
 @task
-def display_image(ctx, uuid):
-    """Display image to chromecasts with uuid uuid"""    
-    print("Finding chromecasts. This might take a while!\n")
+def flask(ctx, folder):
+    app = Flask(__name__)
 
-    casts = pychromecast.get_chromecasts()
+    @app.route("/")
+    def hello():
+        return "Hello World!"
+
+@task
+def slideshow(ctx, folder, uuid):
+    # Move to the folder with the images
+    os.chdir(folder)
+    
+    # Get our current ip
+    ip = _get_my_local_ip()
+
+    # Get all the files (that are jpg)
+    files = glob.glob('**/*.jpg', recursive=True)
+
+    # Get an handle on the chromecast 
+    cast = _get_cast(uuid)
+    cast.wait()
+    media_controller = cast.media_controller
+
+    # Start up a webserver
+    Handler = http.server.SimpleHTTPRequestHandler
+
+    with socketserver.TCPServer((ip, 0), Handler) as httpd:
+        port = httpd.socket.getsockname()[1]
+        print(f"serving at http://{ip}:{port}")
+        urls = [f"http://{ip}:{port}/{file}" for file in files]
+        
+        threading.Thread(target=httpd.serve_forever).start()
+
+        while True:
+            for url in urls:
+                print(url)                
+                media_controller.play_media(url, 'image/jpeg')
+                time.sleep(10)
+
+            
 
 
-
-    try:
-        cast = [cast for cast in casts if cast.device.uuid.__str__() == uuid][0]
-    except BaseException as e:
-        print(e)
-
-    breakpoint()
+        

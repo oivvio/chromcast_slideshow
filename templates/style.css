@@ -1,0 +1,25 @@
+* {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+body {
+    background-color: black;
+}
+
+img {
+    width: 100vw;
+    height: 100vh;
+    object-fit: contain;
+
+    opacity: 0.0;
+    position: absolute;
+    transition: opacity 500ms ease-in-out;
+}
+
+
+img.active {
+    opacity: 1;
+
+}
