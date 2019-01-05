@@ -1,55 +1,62 @@
+"use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 function isEven(n) {
     n = Number(n);
     return n === 0 || !!(n && !(n % 2));
 }
-function isOdd(n) {
-    return isEven(Number(n) + 1);
-}
 function updateImage(index, urls) {
-    var url = urls[index];
-    if (isEven(index)) {
-        var activeElement = document.getElementById("even");
-        var inActiveElement = document.getElementById("odd");
-    }
-    else {
-        var activeElement = document.getElementById("odd");
-        var inActiveElement = document.getElementById("even");
-    }
-    // Update the image of the active element
-    // And add the active class
-    activeElement.src = url;
-    activeElement.classList.add("active");
-    // Remove the active class from the inactive element
-    inActiveElement.classList.remove("active");
-    return true;
+    return __awaiter(this, void 0, void 0, function* () {
+        const url = urls[index];
+        // Does this gurantee that the image is ready for use
+        let response = yield fetch(url);
+        let blob = yield response.blob();
+        let objectURL = yield URL.createObjectURL(blob);
+        if (isEven(index)) {
+            var activeElement = document.getElementById("even");
+            var inActiveElement = document.getElementById("odd");
+        }
+        else {
+            var activeElement = document.getElementById("odd");
+            var inActiveElement = document.getElementById("even");
+        }
+        // Update the image of the active element
+        // And add the active class
+        activeElement.src = objectURL;
+        activeElement.classList.add("active");
+        // Remove the active class from the inactive element
+        inActiveElement.classList.remove("active");
+    });
+}
+function delay(milliseconds) {
+    return __awaiter(this, void 0, void 0, function* () {
+        return new Promise(resolve => {
+            setTimeout(resolve, milliseconds);
+        });
+    });
 }
 window.onload = function () {
-    console.log("set!");
-    // Get the images json
-    fetch("/images")
-        .then(function (response) {
-        return response.json();
-    })
-        .then(function (image_urls) {
-        // Randomize the image to start at.
-        var index = Math.round(Math.random() * image_urls.length);
+    return __awaiter(this, void 0, void 0, function* () {
+        // Get the images json
+        const imagesResponse = yield fetch("/images");
+        const imageUrls = yield imagesResponse.json();
+        // Randomize the image to start at.    
+        let index = Math.round(Math.random() * imageUrls.length);
         // Set the first image
-        updateImage(index, image_urls);
-        // Start an infinite loop
-        var imageUpdateloop = setInterval(function () {
+        yield updateImage(index, imageUrls);
+        while (true) {
             // Increment the index
-            index = ++index % image_urls.length;
-            // Update the image
-            updateImage(index, image_urls);
-        }, 5000);
-        var timeUpdateLoop = setInterval(function () {
-            var now = new Date();
-            var timeString = now.getHours() + ":" + now.getMinutes();
-            console.log(timeString);
-            // Increment the index
-            // index = ++index % image_urls.length;
-            // Update the image
-            // updateImage(index, image_urls);
-        }, 100);
+            index = ++index % imageUrls.length;
+            // Change the image
+            yield updateImage(index, imageUrls);
+            // Hang back
+            yield delay(5000);
+        }
     });
 };

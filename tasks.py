@@ -84,6 +84,10 @@ def slideshow(ctx, folder, uuid):
                 time.sleep(10)
 
             
+@task
+def build_js(ctx, pty=True):
 
+    cmd = "./node_modules/.bin/tsc -w  --project tsconfig.json"
+    ctx.run(cmd, pty=pty)
 
         

@@ -3,12 +3,13 @@ function isEven(n: number) {
     return n === 0 || !!(n && !(n % 2));
 }
 
-function isOdd(n: number) {
-    return isEven(Number(n) + 1);
-}
-
-function updateImage(index: number, urls: string[]) {
+async function updateImage(index: number, urls: string[]) {
     const url = urls[index];
+
+    // Does this gurantee that the image is ready for use
+    let response = await fetch(url);
+    let blob = await response.blob();
+    let objectURL = await URL.createObjectURL(blob);
 
     if (isEven(index)) {
         var activeElement = document.getElementById("even") as HTMLImageElement;
@@ -21,52 +22,38 @@ function updateImage(index: number, urls: string[]) {
 
     // Update the image of the active element
     // And add the active class
-    activeElement.src = url;
+    activeElement.src = objectURL;
     activeElement.classList.add("active");
 
     // Remove the active class from the inactive element
     inActiveElement.classList.remove("active");
-
-
-    return true;
 }
 
+async function delay(milliseconds: number) {
+    return new Promise<void>(resolve => {
+        setTimeout(resolve, milliseconds);
+    });
+}
 
-window.onload = function() {
-    console.log("set!");
-
+window.onload = async function() {
     // Get the images json
-    fetch("/images")
-        .then(function(response) {
-            return response.json();
-        })
-        .then(function(image_urls) {
-            // Randomize the image to start at.
-            var index = Math.round(Math.random() * image_urls.length);
+    const imagesResponse = await fetch("/images");
+    const imageUrls = await imagesResponse.json();
 
-            // Set the first image
-            updateImage(index, image_urls);
+    // Randomize the image to start at.    
+    let index = Math.round(Math.random() * imageUrls.length);
 
-            // Start an infinite loop
-            var imageUpdateloop = setInterval(function() {
-                // Increment the index
-                index = ++index % image_urls.length;
+    // Set the first image
+    await updateImage(index, imageUrls);
 
-                // Update the image
-                updateImage(index, image_urls);
-            }, 5000);
+    while (true) {
+        // Increment the index
+        index = ++index % imageUrls.length;
 
-            var timeUpdateLoop = setInterval(function() {
-                var now = new Date();
-                var timeString = now.getHours() + ":" + now.getMinutes();
+        // Change the image
+        await updateImage(index, imageUrls);
 
-                console.log(timeString);
-                // Increment the index
-                // index = ++index % image_urls.length;
-
-                // Update the image
-                // updateImage(index, image_urls);
-            }, 100);
-
-        });
+        // Hang back
+        await delay(5000);
+    }
 };
