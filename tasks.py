@@ -1,16 +1,19 @@
-import http.server
 import os
-import socketserver
 import socket
 import glob
-import threading
+import subprocess
+import sys
 import time
-import urllib
-from flask import Flask
 
 from invoke import task
-import pychromecast
+from loguru import logger
 from pychromecast.controllers.dashcast import DashCastController
+
+import pychromecast
+
+
+logger.add("/var/log/ccss.log")
+logger.add(sys.stderr)
 
 
 def _get_my_local_ip():
@@ -20,84 +23,89 @@ def _get_my_local_ip():
     s.close()
     return result
 
-def _get_cast(uuid):
-    print("Finding chromecasts. This might take a while!\n")
-    
+
+def _get_cast(uuid_or_name):
+    msg = "Finding chromecasts. This might take a while!\n"
+    logger.debug(msg)
+
     casts = pychromecast.get_chromecasts()
 
     try:
-        cast = [cast for cast in casts if cast.device.uuid.__str__() == uuid][0]
+        cast = [
+            cast
+            for cast in casts
+            if uuid_or_name in [cast.device.uuid.__str__(), cast.device.friendly_name]
+        ][0]
     except BaseException as e:
         cast = None
-        print(e)
+        logger.debug(e)
 
     return cast
-    
-    
+
+
+def _host_up(host):
+    """
+    Returns True if host (str) responds to a ping request.
+    Remember that a host may not respond to a ping (ICMP) request even if the host name is valid.
+    """
+    # Building the command. Ex: "ping -c 1 google.com"
+    command = ["ping", "-c", "1", host]
+
+    # Pinging
+    return subprocess.call(command, stdout=open(os.devnull, "wb")) == 0
+
+
 @task
 def list_chromecasts(ctx):
     """List chromecasts on network"""
-    print("Finding chromecasts. This might take a while!\n")
+    logger.debug("Finding chromecasts. This might take a while!")
     casts = pychromecast.get_chromecasts()
     for cast in casts:
-        print(f"[{cast.device.friendly_name}] [{cast.device.uuid}]")
+        logger.debug(f"[{cast.device.friendly_name}] [{cast.device.uuid}]")
 
 
 @task
-def slideshow(ctx, folder, uuid):
-    # Move to the folder with the images
-    os.chdir(folder)
-    
-    # Get our current ip
-    ip = _get_my_local_ip()
+def runslideshow(ctx, uuid_or_name):
+    APP_ID_BACKDROP = "E8C28D3C"
 
-    # Get all the files (that are jpg)
-    files = glob.glob('**/*.jpg', recursive=True)
+    while True:
+        try:
+            # Get a handle on the chromecast
+            cast = _get_cast(uuid_or_name)
+            # TODO this might return None
+            cast.wait()
 
-    # Get an handle on the chromecast 
-    cast = _get_cast(uuid)
-    cast.wait()
-    media_controller = cast.media_controller
+            logger.debug(f"Found {uuid_or_name}")
 
-    # Start up a webserver
-    Handler = http.server.SimpleHTTPRequestHandler
+            while True:
 
-    with socketserver.TCPServer((ip, 0), Handler) as httpd:
-        port = httpd.socket.getsockname()[1]
-        print(f"serving at http://{ip}:{port}")
-        urls = [f"http://{ip}:{port}/{file}" for file in files]
-        
-        threading.Thread(target=httpd.serve_forever).start()
+                # Check if the ChromeCast is alive at all
+                if _host_up(cast.host):
+                    logger.debug(f"{uuid_or_name} is up")
 
-        while True:
-            for url in urls:
-                print(url)                
-                media_controller.play_media(url, 'image/jpeg')
-                time.sleep(10)
+                    # Check if the ChromeCast is running the
+                    # default Backdrop app
+                    if cast.status.app_id == APP_ID_BACKDROP:
+                        logger.debug(f"Takeover")
 
+                        # Get our ip
+                        IP = _get_my_local_ip()
 
-@task
-def loadslideshow(ctx, uuid):
-    # Move to the folder with the images
-    # Get our current ip
-    ip = _get_my_local_ip()
+                        # Start casting our slideshow
+                        dcc = DashCastController()
+                        cast.register_handler(dcc)
+                        dcc.load_url(f"http://{IP}:5000")
+                # Hang back
+                time.sleep(1)
 
-    # Get a handle on the chromecast 
-    cast = _get_cast(uuid)
-    cast.wait()
-
-    dcc = DashCastController()
-    cast.register_handler(dcc)
-
-    dcc.load_url(f"http://{ip}:5000")
-    breakpoint()
+        except BaseException as e:
+            raise e
+        # Hang back
+        time.sleep(1)
 
 
-                
 @task
 def build_js(ctx, pty=True):
 
     cmd = "./node_modules/.bin/tsc -w  --project tsconfig.json"
     ctx.run(cmd, pty=pty)
-
-        

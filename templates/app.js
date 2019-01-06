@@ -18,8 +18,8 @@ function updateImage(index, urls) {
         let response = yield fetch(url);
         let blob = yield response.blob();
         let objectURL = yield URL.createObjectURL(blob);
-        console.log("hang back 1000ms");
-        yield delay(1000);
+        // console.log("hang back 1000ms");
+        // await delay(1000);
         if (isEven(index)) {
             var activeElement = document.getElementById("even");
             var inActiveElement = document.getElementById("odd");
@@ -30,10 +30,14 @@ function updateImage(index, urls) {
         }
         // Update the image of the active element
         // And add the active class
-        activeElement.src = objectURL;
-        activeElement.classList.add("active");
+        // activeElement.src = objectURL;
+        yield activeElement.setAttribute("src", objectURL);
+        // Now that it is set in the DOM, we can release it and prevent a memory leak.
+        yield URL.revokeObjectURL(objectURL);
+        yield delay(500);
+        yield activeElement.classList.add("active");
         // Remove the active class from the inactive element
-        inActiveElement.classList.remove("active");
+        yield inActiveElement.classList.remove("active");
     });
 }
 function delay(milliseconds) {

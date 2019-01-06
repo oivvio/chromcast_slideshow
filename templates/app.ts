@@ -14,8 +14,8 @@ async function updateImage(index: number, urls: string[]) {
     let blob = await response.blob();
     let objectURL = await URL.createObjectURL(blob);
 
-    console.log("hang back 1000ms");
-    await delay(1000);
+    // console.log("hang back 1000ms");
+    // await delay(1000);
 
     if (isEven(index)) {
         var activeElement = document.getElementById("even") as HTMLImageElement;
@@ -28,11 +28,17 @@ async function updateImage(index: number, urls: string[]) {
 
     // Update the image of the active element
     // And add the active class
-    activeElement.src = objectURL;
-    activeElement.classList.add("active");
+    // activeElement.src = objectURL;
+    await activeElement.setAttribute("src", objectURL);
+
+    // Now that it is set in the DOM, we can release it and prevent a memory leak.
+    await URL.revokeObjectURL(objectURL);
+
+    await delay(500);
+    await activeElement.classList.add("active");
 
     // Remove the active class from the inactive element
-    inActiveElement.classList.remove("active");
+    await inActiveElement.classList.remove("active");
 }
 
 async function delay(milliseconds: number) {
