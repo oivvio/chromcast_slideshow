@@ -32,7 +32,7 @@ async function updateImage(index: number, urls: string[]) {
     await activeElement.setAttribute("src", objectURL);
 
     // Now that it is set in the DOM, we can release it and prevent a memory leak.
-    await URL.revokeObjectURL(objectURL);
+    // await URL.revokeObjectURL(objectURL);
 
     await delay(500);
     await activeElement.classList.add("active");

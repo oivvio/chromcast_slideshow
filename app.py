@@ -8,7 +8,7 @@ import urllib
 from flask import request
 from loguru import logger
 
-logger.add("/var/log/ccss.log")
+logger.add("/var/log/ccss.log", enqueue=True)
 
 IMAGEFOLDER = "/home/oivvio/Dropbox/familjen/bildspel/"
 PORT = 5000

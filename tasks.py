@@ -12,7 +12,7 @@ from pychromecast.controllers.dashcast import DashCastController
 import pychromecast
 
 
-logger.add("/var/log/ccss.log")
+logger.add("/var/log/ccss.log", enqueue=True)
 logger.add(sys.stderr)
 
 
@@ -29,7 +29,13 @@ def _get_cast(uuid_or_name):
     logger.debug(msg)
 
     casts = pychromecast.get_chromecasts()
+    if len(casts) == 0:
+        logger.debug(f"get_chromecasts returned nothing")
 
+    for cast in casts:
+        logger.debug(
+            f"Cast listing: '{cast.device.friendly_name}' '{cast.device.uuid.__str__()}'"
+        )
     try:
         cast = [
             cast
@@ -67,41 +73,55 @@ def list_chromecasts(ctx):
 @task
 def runslideshow(ctx, uuid_or_name):
     APP_ID_BACKDROP = "E8C28D3C"
+    APP_ID_DASHCAST = "84912283"
 
     while True:
         try:
             # Get a handle on the chromecast
             cast = _get_cast(uuid_or_name)
-            # TODO this might return None
-            cast.wait()
 
-            logger.debug(f"Found {uuid_or_name}")
+            if cast:
+                cast.wait()
 
-            while True:
+                logger.debug(f"Found '{uuid_or_name}'")
 
-                # Check if the ChromeCast is alive at all
-                if _host_up(cast.host):
-                    logger.debug(f"{uuid_or_name} is up")
+                while True:
 
-                    # Check if the ChromeCast is running the
-                    # default Backdrop app
-                    if cast.status.app_id == APP_ID_BACKDROP:
-                        logger.debug(f"Takeover")
+                    # Check if the ChromeCast is alive at all
+                    if _host_up(cast.host):
+                        logger.debug(f"'{uuid_or_name}' is up")
 
-                        # Get our ip
-                        IP = _get_my_local_ip()
+                        # Check if the ChromeCast is running the
+                        # default Backdrop app
+                        if cast.status.app_id == APP_ID_BACKDROP:
+                            logger.debug(
+                                f"'{uuid_or_name}' is running Backdrop.  Try to start slide show."
+                            )
 
-                        # Start casting our slideshow
-                        dcc = DashCastController()
-                        cast.register_handler(dcc)
-                        dcc.load_url(f"http://{IP}:5000")
-                # Hang back
-                time.sleep(1)
+                            # Get our ip
+                            IP = _get_my_local_ip()
+
+                            # Start casting our slideshow
+                            dcc = DashCastController()
+                            cast.register_handler(dcc)
+                            dcc.load_url(f"http://{IP}:5000")
+                        elif cast.status.app_id == APP_ID_DASHCAST:
+                            logger.debug(
+                                f"'{uuid_or_name}' is already running Dashcast."
+                            )
+                        else:
+                            logger.debug(
+                                f"'{uuid_or_name}' is running {cast.status.display_name}"
+                            )
+                    else:
+                        logger.debug(f"'{uuid_or_name}' does not respond to ping")
+                    # Hang back
+                    time.sleep(5)
 
         except BaseException as e:
             raise e
         # Hang back
-        time.sleep(1)
+        time.sleep(5)
 
 
 @task

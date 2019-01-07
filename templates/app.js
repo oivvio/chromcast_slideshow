@@ -33,7 +33,7 @@ function updateImage(index, urls) {
         // activeElement.src = objectURL;
         yield activeElement.setAttribute("src", objectURL);
         // Now that it is set in the DOM, we can release it and prevent a memory leak.
-        yield URL.revokeObjectURL(objectURL);
+        // await URL.revokeObjectURL(objectURL);
         yield delay(500);
         yield activeElement.classList.add("active");
         // Remove the active class from the inactive element
