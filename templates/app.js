@@ -14,12 +14,11 @@ function isEven(n) {
 function updateImage(index, urls) {
     return __awaiter(this, void 0, void 0, function* () {
         const url = urls[index];
-        // Does this gurantee that the image is ready for use
+        // Get the image and turn it into an objectURL
         let response = yield fetch(url);
         let blob = yield response.blob();
         let objectURL = yield URL.createObjectURL(blob);
-        // console.log("hang back 1000ms");
-        // await delay(1000);
+        // Get our elements
         if (isEven(index)) {
             var activeElement = document.getElementById("even");
             var inActiveElement = document.getElementById("odd");
@@ -29,11 +28,10 @@ function updateImage(index, urls) {
             var inActiveElement = document.getElementById("even");
         }
         // Update the image of the active element
-        // And add the active class
-        // activeElement.src = objectURL;
         yield activeElement.setAttribute("src", objectURL);
         // Now that it is set in the DOM, we can release it and prevent a memory leak.
-        // await URL.revokeObjectURL(objectURL);
+        yield URL.revokeObjectURL(objectURL);
+        // Let things settle
         yield delay(500);
         yield activeElement.classList.add("active");
         // Remove the active class from the inactive element
@@ -49,14 +47,17 @@ function delay(milliseconds) {
 }
 window.onload = function () {
     return __awaiter(this, void 0, void 0, function* () {
-        // Do not dim the screen
-        let noSleep = new NoSleep();
-        noSleep.enable();
+        // Do not dim the screen on touch devices
+        if ("ontouchstart" in document.documentElement) {
+            let noSleep = new NoSleep();
+            noSleep.enable();
+        }
         // Get the images json
         const imagesResponse = yield fetch("/images");
         const imageUrls = yield imagesResponse.json();
-        // Randomize the image to start at.    
-        let index = Math.round(Math.random() * imageUrls.length);
+        // No need to randomize the image to start at since we get a
+        // shuffled list back from the server
+        let index = 0;
         // Set the first image
         yield updateImage(index, imageUrls);
         while (true) {

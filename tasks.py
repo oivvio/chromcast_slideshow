@@ -11,8 +11,11 @@ from pychromecast.controllers.dashcast import DashCastController
 
 import pychromecast
 
+CCSS_PORT = 5000
 
-logger.add("/var/log/ccss.log", enqueue=True)
+LOG_FILE="/var/log/ccss.log"
+logger.add(LOG_FILE, enqueue=True, retention="10 days", backtrace=True)
+
 logger.add(sys.stderr)
 
 
@@ -104,7 +107,7 @@ def runslideshow(ctx, uuid_or_name):
                             # Start casting our slideshow
                             dcc = DashCastController()
                             cast.register_handler(dcc)
-                            dcc.load_url(f"http://{IP}:5000")
+                            dcc.load_url(f"http://{IP}:{CCSS_PORT}")
                         elif cast.status.app_id == APP_ID_DASHCAST:
                             logger.debug(
                                 f"'{uuid_or_name}' is already running Dashcast."
@@ -123,7 +126,13 @@ def runslideshow(ctx, uuid_or_name):
         # Hang back
         time.sleep(5)
 
-
+@task
+def flask(ctx, pty=True, port=CCSS_PORT):
+    """Start the application that serves the slideshow """
+    cmd = f"CCSS_PORT={port} python app.py"
+    ctx.run(cmd, pty=pty)
+    
+    
 @task
 def build_js(ctx, pty=True):
 

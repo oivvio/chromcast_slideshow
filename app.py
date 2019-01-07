@@ -4,14 +4,25 @@ import os
 import pathlib
 import socket
 import urllib
+from random import shuffle
 
 from flask import request
 from loguru import logger
+from gevent.pywsgi import WSGIServer
 
-logger.add("/var/log/ccss.log", enqueue=True)
+LOG_FILE="/var/log/ccss.log"
+logger.add(LOG_FILE, enqueue=True, retention="10 days", backtrace=True)
 
 IMAGEFOLDER = "/home/oivvio/Dropbox/familjen/bildspel/"
-PORT = 5000
+
+
+try:
+    PORT = int(os.environ["CCSS_PORT"])
+except KeyError:
+    PORT = 5000
+except ValueError:
+    PORT = 5000
+
 
 app = flask.Flask(__name__)
 
@@ -22,6 +33,7 @@ def get_image_urls(folder):
     files = [
         f for f in files if pathlib.Path(f).suffix.lower() in [".jpg", ".jpeg", ".png"]
     ]
+    shuffle(files)
 
     return [f"/image/{urllib.parse.quote(file)}" for file in files]
 
@@ -51,3 +63,8 @@ def images():
 def image(path):
     logger.debug(request.remote_addr + ":" + path)
     return flask.send_from_directory(IMAGEFOLDER, path)
+
+
+# Start the server
+http_server = WSGIServer(('', PORT), app)
+http_server.serve_forever()

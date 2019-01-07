@@ -9,31 +9,28 @@ function isEven(n: number) {
 async function updateImage(index: number, urls: string[]) {
     const url = urls[index];
 
-    // Does this gurantee that the image is ready for use
+    // Get the image and turn it into an objectURL
     let response = await fetch(url);
     let blob = await response.blob();
     let objectURL = await URL.createObjectURL(blob);
 
-    // console.log("hang back 1000ms");
-    // await delay(1000);
 
+    // Get our elements
     if (isEven(index)) {
         var activeElement = document.getElementById("even") as HTMLImageElement;
         var inActiveElement = document.getElementById("odd") as HTMLImageElement;
-
     } else {
         var activeElement = document.getElementById("odd") as HTMLImageElement;
         var inActiveElement = document.getElementById("even") as HTMLImageElement;
     }
 
     // Update the image of the active element
-    // And add the active class
-    // activeElement.src = objectURL;
     await activeElement.setAttribute("src", objectURL);
 
     // Now that it is set in the DOM, we can release it and prevent a memory leak.
-    // await URL.revokeObjectURL(objectURL);
+    await URL.revokeObjectURL(objectURL);
 
+    // Let things settle
     await delay(500);
     await activeElement.classList.add("active");
 
@@ -47,20 +44,20 @@ async function delay(milliseconds: number) {
     });
 }
 
-
 window.onload = async function() {
-
-    // Do not dim the screen
-
-    let noSleep = new NoSleep();
-    noSleep.enable();
+    // Do not dim the screen on touch devices
+    if ("ontouchstart" in document.documentElement) {
+        let noSleep = new NoSleep();
+        noSleep.enable();
+    }
 
     // Get the images json
     const imagesResponse = await fetch("/images");
     const imageUrls = await imagesResponse.json();
 
-    // Randomize the image to start at.    
-    let index = Math.round(Math.random() * imageUrls.length);
+    // No need to randomize the image to start at since we get a
+    // shuffled list back from the server
+    let index = 0;
 
     // Set the first image
     await updateImage(index, imageUrls);
