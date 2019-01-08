@@ -4,14 +4,17 @@ import glob
 import subprocess
 import sys
 import time
+import pathlib
 
 from invoke import task
 from loguru import logger
 from pychromecast.controllers.dashcast import DashCastController
+from pychromecast.discovery import discover_chromecasts
 
 import pychromecast
 
 CCSS_PORT = 5000
+CCSS_IMAGEFOLDER = "/opt/ccss_imagefolder"
 
 LOG_FILE="/var/log/ccss.log"
 
@@ -34,29 +37,59 @@ def _get_my_local_ip():
     return result
 
 
-def _get_cast(uuid_or_name):
+def get_cast(uuid_or_name, timeout=1, max_timeout=129):
     msg = "Finding chromecasts. This might take a while!\n"
     logger.debug(msg)
 
-    casts = pychromecast.get_chromecasts()
-    if len(casts) == 0:
-        logger.debug(f"get_chromecasts returned nothing")
+    def _filter(host, str):
+        return host[4] == str or host[2].__str__() == str
 
-    for cast in casts:
-        logger.debug(
-            f"Cast listing: '{cast.device.friendly_name}' '{cast.device.uuid.__str__()}'"
-        )
-    try:
-        cast = [
-            cast
-            for cast in casts
-            if uuid_or_name in [cast.device.uuid.__str__(), cast.device.friendly_name]
-        ][0]
-    except BaseException as e:
-        cast = None
-        logger.debug(e)
+    timeout = 1
+    cast = None
 
+    # Keep trying until we find a host or we've maxed out the timeout
+    # This is using a back off strategy that doubles the length of the
+    # timeout for every try.
+    while not cast and timeout < max_timeout:
+        logger.debug(f"Run discover chromecasts with a timeout of {timeout}")
+        hosts = discover_chromecasts(timeout=timeout)
+        
+        logger.debug(f"Found {len(hosts)} chromecasts")
+        hosts = [h for h in hosts if _filter(h, uuid_or_name)]
+        
+        if hosts:
+            logger.debug(f"Found a matching  chromecast")
+            host = hosts[0]
+            cast = pychromecast._get_chromecast_from_host(
+                host, tries=None, retry_wait=None, timeout=timeout,
+                blocking=True)
+
+        timeout *= 2                    
     return cast
+
+# def _get_cast(uuid_or_name):
+#     msg = "Finding chromecasts. This might take a while!\n"
+#     logger.debug(msg)
+
+#     casts = pychromecast.get_chromecasts()
+#     if len(casts) == 0:
+#         logger.debug(f"get_chromecasts returned nothing")
+
+#     for cast in casts:
+#         logger.debug(
+#             f"Cast listing: '{cast.device.friendly_name}' '{cast.device.uuid.__str__()}'"
+#         )
+#     try:
+#         cast = [
+#             cast
+#             for cast in casts
+#             if uuid_or_name in [cast.device.uuid.__str__(), cast.device.friendly_name]
+#         ][0]
+#     except BaseException as e:
+#         cast = None
+#         logger.debug(e)
+
+#     return cast
 
 
 def _host_up(host):
@@ -90,7 +123,7 @@ def runslideshow(ctx, uuid_or_name):
     while True:
         try:
             # Get a handle on the chromecast
-            cast = _get_cast(uuid_or_name)
+            cast = get_cast(uuid_or_name)
 
             if cast:
                 cast.wait()
@@ -136,10 +169,14 @@ def runslideshow(ctx, uuid_or_name):
         time.sleep(5)
 
 @task
-def flask(ctx, pty=True, port=CCSS_PORT):
+def flask(ctx, pty=True, port=CCSS_PORT, folder=CCSS_IMAGEFOLDER):
     """Start the application that serves the slideshow """
-    cmd = f"CCSS_PORT={port} python app.py"
-    ctx.run(cmd, pty=pty)
+    if not pathlib.Path(folder).exists():
+        logger.debug(f"The given image folder, {folder}, does not exist. Aborting")
+    else:
+        logger.debug(f"Starting image server on port {port}")
+        cmd = f"CCSS_PORT={port} CCSS_IMAGEFOLDER={folder} python app.py"
+        ctx.run(cmd, pty=pty)
     
     
 @task
