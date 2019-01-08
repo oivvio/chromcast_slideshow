@@ -14,7 +14,7 @@ LOG_FILE="/var/log/ccss.log"
 logger.add(LOG_FILE, enqueue=True, retention="10 days", backtrace=True)
 
 try:
-    IMAGEFOLDER = int(os.environ["CCSS_IMAGEFOLDER"])
+    IMAGEFOLDER = os.environ["CCSS_IMAGEFOLDER"]
 except BaseException:
     IMAGEFOLDER = "/opt/ccss_imagefolder"
 
