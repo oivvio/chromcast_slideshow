@@ -14,9 +14,16 @@ import pychromecast
 CCSS_PORT = 5000
 
 LOG_FILE="/var/log/ccss.log"
+
 logger.add(LOG_FILE, enqueue=True, retention="10 days", backtrace=True)
 
 logger.add(sys.stderr)
+
+def write_pidfile(filename):
+    pid = str(os.getpid())
+    f = open(filename, 'w')
+    f.write(pid)
+    f.close()
 
 
 def _get_my_local_ip():
@@ -78,6 +85,8 @@ def runslideshow(ctx, uuid_or_name):
     APP_ID_BACKDROP = "E8C28D3C"
     APP_ID_DASHCAST = "84912283"
 
+    PID_FILE="/tmp/ccss_slideshow.pid"
+    write_pidfile(PID_FILE)
     while True:
         try:
             # Get a handle on the chromecast
