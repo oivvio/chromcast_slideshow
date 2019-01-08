@@ -30,9 +30,12 @@ app = flask.Flask(__name__)
 
 def write_pidfile(filename):
     pid = str(os.getpid())
-    f = open(filename, 'w')
-    f.write(pid)
-    f.close()
+    p = pathlib.Path(filename)
+    with p.open('w') as f:
+        f.write(pid)
+        f.close()
+
+    p.chmod(0o666)
 
 def get_image_urls(folder):
     os.chdir(folder)

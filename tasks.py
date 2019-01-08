@@ -24,9 +24,12 @@ logger.add(sys.stderr)
 
 def write_pidfile(filename):
     pid = str(os.getpid())
-    f = open(filename, 'w')
-    f.write(pid)
-    f.close()
+    p = pathlib.Path(filename)
+    with p.open('w') as f:
+        f.write(pid)
+        f.close()
+
+    p.chmod(0o666)
 
 
 def _get_my_local_ip():
