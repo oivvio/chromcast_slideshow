@@ -14,6 +14,7 @@ function isEven(n) {
 function updateImage(index, urls) {
     return __awaiter(this, void 0, void 0, function* () {
         const url = urls[index];
+        console.log("Switching to image: ", url);
         // Get the image and turn it into an objectURL
         let response = yield fetch(url);
         let blob = yield response.blob();

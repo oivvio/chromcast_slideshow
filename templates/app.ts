@@ -8,6 +8,7 @@ function isEven(n: number) {
 
 async function updateImage(index: number, urls: string[]) {
     const url = urls[index];
+    console.log("Switching to image: ", url);
 
     // Get the image and turn it into an objectURL
     let response = await fetch(url);

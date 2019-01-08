@@ -57,6 +57,7 @@ def images():
     """A json list of files """
     logger.debug(request.remote_addr)
     return flask.jsonify(get_image_urls(IMAGEFOLDER))
+    # return flask.jsonify(["/image/IMG_2436.JPG"] * 10)
 
 
 @app.route("/image/<path:path>")
