@@ -28,9 +28,9 @@ except BaseException:
 app = flask.Flask(__name__)
 
 
-def write_pidfile():
+def write_pidfile(filename):
     pid = str(os.getpid())
-    f = open('/tmp/ccss.pid', 'w')
+    f = open(filename, 'w')
     f.write(pid)
     f.close()
 
@@ -74,7 +74,7 @@ def image(path):
 
 
 # Write a pidfile
-write_pidfile()
+write_pidfile("/tmp/ccss_flask.pid")
 
 # Start the server
 http_server = WSGIServer(('', PORT), app)
