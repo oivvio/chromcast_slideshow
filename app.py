@@ -13,16 +13,15 @@ from gevent.pywsgi import WSGIServer
 LOG_FILE="/var/log/ccss.log"
 logger.add(LOG_FILE, enqueue=True, retention="10 days", backtrace=True)
 
-IMAGEFOLDER = "/home/oivvio/Dropbox/familjen/bildspel/"
-
+try:
+    IMAGEFOLDER = int(os.environ["CCSS_IMAGEFOLDER"])
+except BaseException:
+    IMAGEFOLDER = "/opt/ccss_imagefolder"
 
 try:
     PORT = int(os.environ["CCSS_PORT"])
-except KeyError:
+except BaseException:
     PORT = 5000
-except ValueError:
-    PORT = 5000
-
 
 app = flask.Flask(__name__)
 
