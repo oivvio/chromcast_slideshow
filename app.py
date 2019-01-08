@@ -23,8 +23,16 @@ try:
 except BaseException:
     PORT = 5000
 
+
+    
 app = flask.Flask(__name__)
 
+
+def write_pidfile():
+    pid = str(os.getpid())
+    f = open('/tmp/ccss.pid', 'w')
+    f.write(pid)
+    f.close()
 
 def get_image_urls(folder):
     os.chdir(folder)
@@ -64,6 +72,9 @@ def image(path):
     logger.debug(request.remote_addr + ":" + path)
     return flask.send_from_directory(IMAGEFOLDER, path)
 
+
+# Write a pidfile
+write_pidfile()
 
 # Start the server
 http_server = WSGIServer(('', PORT), app)
