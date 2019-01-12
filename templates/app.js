@@ -7,6 +7,42 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+function toggleFullScreen() {
+    const doc = document;
+    if (doc.fullscreenElement ||
+        doc.mozFullScreenElement ||
+        doc.webkitFullscreenElement) {
+        if (doc.cancelFullScreen) {
+            doc.cancelFullScreen();
+        }
+        else {
+            if (doc.mozCancelFullScreen) {
+                doc.mozCancelFullScreen();
+            }
+            else {
+                if (doc.webkitCancelFullScreen) {
+                    doc.webkitCancelFullScreen();
+                }
+            }
+        }
+    }
+    else {
+        const _element = document.documentElement;
+        if (_element.requestFullscreen) {
+            _element.requestFullscreen();
+        }
+        else {
+            if (_element.mozRequestFullScreen) {
+                _element.mozRequestFullScreen();
+            }
+            else {
+                if (_element.webkitRequestFullscreen) {
+                    _element.webkitRequestFullscreen(Element.ALLOW_KEYBOARD_INPUT);
+                }
+            }
+        }
+    }
+}
 function isEven(n) {
     n = Number(n);
     return n === 0 || !!(n && !(n % 2));
@@ -48,6 +84,23 @@ function delay(milliseconds) {
 }
 window.onload = function () {
     return __awaiter(this, void 0, void 0, function* () {
+        function fullscreen() {
+            if (screenfull.enabled) {
+                screenfull.request();
+            }
+        }
+        // Bind image.click to toggleFullscreen
+        const images = document.getElementsByTagName("img");
+        for (let i = 0; i < images.length; i++) {
+            console.log(images[i]);
+            // images[i].onclick = toggleFullScreen;
+            images[i].onclick = fullscreen;
+        }
+        //Bind button to toggleFullscreen
+        const button = document.getElementById("button");
+        if (button) {
+            button.onclick = fullscreen;
+        }
         // Do not dim the screen on touch devices
         if ("ontouchstart" in document.documentElement) {
             let noSleep = new NoSleep();

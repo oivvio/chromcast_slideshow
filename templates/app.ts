@@ -1,5 +1,42 @@
 // We bring NoSleep.js in via a script tag
 declare var NoSleep: any;
+declare var screenfull: any;
+
+function toggleFullScreen() {
+    const doc = document as any;
+    if (
+        doc.fullscreenElement ||
+        doc.mozFullScreenElement ||
+        doc.webkitFullscreenElement
+    ) {
+        if (doc.cancelFullScreen) {
+            doc.cancelFullScreen();
+        } else {
+            if (doc.mozCancelFullScreen) {
+                doc.mozCancelFullScreen();
+            } else {
+                if (doc.webkitCancelFullScreen) {
+                    doc.webkitCancelFullScreen();
+                }
+            }
+        }
+    } else {
+        const _element = document.documentElement as any;
+        if (_element.requestFullscreen) {
+            _element.requestFullscreen();
+        } else {
+            if (_element.mozRequestFullScreen) {
+                _element.mozRequestFullScreen();
+            } else {
+                if (_element.webkitRequestFullscreen) {
+                    _element.webkitRequestFullscreen(
+                        (Element as any).ALLOW_KEYBOARD_INPUT
+                    );
+                }
+            }
+        }
+    }
+}
 
 function isEven(n: number) {
     n = Number(n);
@@ -14,7 +51,6 @@ async function updateImage(index: number, urls: string[]) {
     let response = await fetch(url);
     let blob = await response.blob();
     let objectURL = await URL.createObjectURL(blob);
-
 
     // Get our elements
     if (isEven(index)) {
@@ -46,6 +82,28 @@ async function delay(milliseconds: number) {
 }
 
 window.onload = async function() {
+
+
+    function fullscreen() {
+        if (screenfull.enabled) {
+            screenfull.request();
+        }
+    }
+
+    // Bind image.click to toggleFullscreen
+    const images = document.getElementsByTagName("img");
+    for (let i = 0; i < images.length; i++) {
+        console.log(images[i]);
+        // images[i].onclick = toggleFullScreen;
+        images[i].onclick = fullscreen;
+    }
+
+    //Bind button to toggleFullscreen
+    const button = document.getElementById("button");
+    if (button) {
+        button.onclick = fullscreen;
+    }
+
     // Do not dim the screen on touch devices
     if ("ontouchstart" in document.documentElement) {
         let noSleep = new NoSleep();

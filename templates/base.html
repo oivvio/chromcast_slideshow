@@ -1,6 +1,5 @@
 <!doctype html>
-<html class="no-js" lang="">
-
+<html>
   <head>
     <meta charset="utf-8">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
@@ -14,14 +13,13 @@
     </style>
     
     <script>
-     {% include 'NoSleep.min.js' %}
-     {% include 'app.js' %}
+      {% include 'NoSleep.min.js' %}
+      {% include 'screenfull.min.js' %}      
+      {% include 'app.js' %}
     </script>
     <div id="app">
-      <img id="even"/>
-      <img id="odd"/>
+      <img class="image" id="even"/>
+      <img class="image" id="odd"/>
     </div>
-
   </body>
-
 </html>
